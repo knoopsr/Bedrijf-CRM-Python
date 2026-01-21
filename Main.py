@@ -11,7 +11,7 @@ def bedrijf_aanmaken():
     db.create_company(name, vat_number)
     print("Bedrijf aangemaakt.")
 
-import crud_functies as db
+
 
 
 def bedrijf_tonen():
@@ -34,6 +34,109 @@ def bedrijf_tonen():
         print(f"{r['id']:>4}  {r['name']:<30}  {vat:<15}  {created:<19}")
 
     print("-" * 80)
+
+
+
+
+
+def bedrijf_aanpassen():
+    try:
+        bedrijf_id = int(input("Geef het ID van het bedrijf dat je wil aanpassen: "))
+    except ValueError:
+        print("Ongeldig ID.")
+        return
+
+    bedrijf = db.get_company_by_id(bedrijf_id)
+
+    if not bedrijf:
+        print("Bedrijf niet gevonden.")
+        return
+
+    print("\nHuidige gegevens:")
+    print(f"Naam: {bedrijf['name']}")
+    print(f"BTW-nummer: {bedrijf['vat_number']}")
+    print(f"Aangemaakt: {bedrijf['created_at']}")
+
+    print("\nLaat een veld leeg om de huidige waarde te behouden.\n")
+
+    # Nieuwe waarden vragen
+    new_name = input("Nieuwe naam: ").strip()
+    new_vat = input("Nieuw BTW-nummer: ").strip()
+
+    # Lege velden behouden de oude waarde
+    name = new_name if new_name else bedrijf["name"]
+    vat = new_vat if new_vat else bedrijf["vat_number"]
+
+    # Update uitvoeren
+    db.update_company(bedrijf_id, name, vat)
+
+    print("Bedrijf succesvol aangepast.")
+
+
+
+
+def bedrijf_verwijderen():
+    try:
+        bedrijf_id = int(input("Geef het ID van het bedrijf dat je wil verwijderen: "))
+    except ValueError:
+        print("Ongeldig ID.")
+        return
+
+    bedrijf = db.get_company_by_id(bedrijf_id)
+
+    if not bedrijf:
+        print("Bedrijf niet gevonden.")
+        return
+
+    print("\nJe staat op het punt om dit bedrijf te verwijderen:")
+    print(f"ID: {bedrijf['id']}")
+    print(f"Naam: {bedrijf['name']}")
+    print(f"BTW: {bedrijf['vat_number']}")
+    print(f"Aangemaakt: {bedrijf['created_at']}")
+
+    bevestiging = input("Weet je zeker dat je dit bedrijf wil verwijderen? (j/n): ").lower()
+
+    if bevestiging != "j":
+        print("Verwijderen geannuleerd.")
+        return
+
+    db.delete_company(bedrijf_id)
+    print("Bedrijf succesvol verwijderd.")
+
+
+
+
+
+def contact_aanmaken():
+    print("\nNIEUW CONTACT AANMAKEN")
+    print("-" * 40)
+
+    first = input("Voornaam: ").strip()
+    last = input("Achternaam: ").strip()
+    email = input("Email: ").strip()
+    phone = input("Telefoon (optioneel): ").strip()
+    company_id = input("Bedrijf ID: ").strip()
+
+    # Validatie verplichte velden
+    if not first or not last or not email or not company_id:
+        print("Voornaam, achternaam, email en bedrijf ID zijn verplicht.")
+        return
+
+    # Bedrijf ID moet een getal zijn
+    try:
+        company_id = int(company_id)
+    except ValueError:
+        print("Ongeldig bedrijf ID.")
+        return
+
+    # Contact opslaan
+    db.create_contact(first, last, email, phone, company_id)
+
+    print("Contact succesvol aangemaakt.")
+
+
+
+
 
 
 
