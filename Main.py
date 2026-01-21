@@ -1,5 +1,18 @@
-@ -1 +1,40 @@
-hghvhgc
+import crud_functies as db
+
+def bedrijf_aanmaken():
+    name = input("Bedrijf naam: ").strip()
+    vat_number = input("Bedrijf vat number: ").strip()
+
+    if not name or not vat_number:
+        print("Naam en VAT-nummer zijn verplicht.")
+        return
+
+    db.create_company(name, vat_number)
+    print("Bedrijf aangemaakt.")
+
+
+
 def menu():
     while True:
         print("1 bedrijf aanmaken")
