@@ -37,6 +37,151 @@ def bedrijf_tonen():
 
 
 
+def contact_tonen():
+    rows = db.list_contacts()
+
+    if not rows:
+        print("Geen contacten gevonden.")
+        return
+
+    print("\nCONTACTEN")
+    print("-" * 100)
+    print(f"{'ID':>4}  {'Naam':<25}  {'Email':<30}  {'Telefoon':<15}  {'Bedrijf ID':<10}")
+    print("-" * 100)
+
+    for c in rows:
+        naam = f"{c['first_name']} {c['last_name']}"
+        email = c['email'] or "-"
+        phone = c['phone'] or "-"
+        company = c['company_id'] or "-"
+
+        print(f"{c['id']:>4}  {naam:<25}  {email:<30}  {phone:<15}  {company:<10}")
+
+    print("-" * 100)
+
+
+
+
+
+def contact_aanpassen():
+    try:
+        contact_id = int(input("Geef het ID van het contact dat je wil aanpassen: "))
+    except ValueError:
+        print("Ongeldig ID.")
+        return
+
+    contact = db.get_contact_by_id(contact_id)
+
+    if not contact:
+        print("Contact niet gevonden.")
+        return
+
+    print("\nHuidige gegevens:")
+    print(f"Voornaam: {contact['first_name']}")
+    print(f"Achternaam: {contact['last_name']}")
+    print(f"Email: {contact['email']}")
+    print(f"Telefoon: {contact['phone']}")
+    print(f"Bedrijf ID: {contact['company_id']}")
+
+    print("\nLaat leeg om de huidige waarde te behouden.\n")
+
+    # Nieuwe waarden vragen
+    new_first = input("Nieuwe voornaam: ").strip()
+    new_last = input("Nieuwe achternaam: ").strip()
+    new_email = input("Nieuwe email: ").strip()
+    new_phone = input("Nieuwe telefoon: ").strip()
+    new_company = input("Nieuw bedrijf ID: ").strip()
+
+    # Lege velden behouden de oude waarde
+    first = new_first if new_first else contact["first_name"]
+    last = new_last if new_last else contact["last_name"]
+    email = new_email if new_email else contact["email"]
+    phone = new_phone if new_phone else contact["phone"]
+
+    if new_company:
+        try:
+            company_id = int(new_company)
+        except ValueError:
+            print("Ongeldig bedrijf ID.")
+            return
+    else:
+        company_id = contact["company_id"]
+
+    # Update uitvoeren
+    db.update_contact(contact_id, first, last, email, phone, company_id)
+
+    print("Contact succesvol aangepast.")
+
+
+
+
+def contact_verwijderen():
+    try:
+        contact_id = int(input("Geef het ID van het contact dat je wil verwijderen: "))
+    except ValueError:
+        print("Ongeldig ID.")
+        return
+
+    # Ophalen van het contact om te tonen wat je gaat verwijderen
+    contact = db.get_contact_by_id(contact_id)
+
+    if not contact:
+        print("Contact niet gevonden.")
+        return
+
+    # Contact tonen ter bevestiging
+    naam = f"{contact['first_name']} {contact['last_name']}"
+    email = contact['email']
+    print(f"\nJe staat op het punt om dit contact te verwijderen:")
+    print(f"ID: {contact_id}")
+    print(f"Naam: {naam}")
+    print(f"Email: {email}")
+
+    bevestiging = input("Weet je zeker dat je dit contact wil verwijderen? (j/n): ").lower()
+
+    if bevestiging != "j":
+        print("Verwijderen geannuleerd.")
+        return
+
+    # Verwijderen uitvoeren
+    db.delete_contact(contact_id)
+    print("Contact verwijderd.")
+
+
+
+
+def toon_bedrijven_met_contacten():
+    rows = db.list_companies_with_contacts()
+
+    if not rows:
+        print("Geen bedrijven gevonden.")
+        return
+
+    print("\nBEDRIJVEN MET CONTACTEN")
+    print("=" * 80)
+
+    for bedrijf in rows:
+        print(f"\nBedrijf: {bedrijf['name']} (ID {bedrijf['id']})")
+        print(f"BTW: {bedrijf['vat_number'] or '-'}")
+        print(f"Aangemaakt: {bedrijf['created_at']}")
+        print("-" * 80)
+
+        contacten = bedrijf.get("contacts", [])
+
+        if not contacten:
+            print("  Geen contacten voor dit bedrijf.")
+            continue
+
+        # Header
+        print(f"  {'ID':>4}  {'Naam':<25}  {'Email':<30}")
+        print(f"  {'-' * 70}")
+
+        # Rows
+        for c in contacten:
+            naam = f"{c['first_name']} {c['last_name']}"
+            print(f"  {c['id']:>4}  {naam:<25}  {c['email']:<30}")
+
+    print("\n" + "=" * 80)
 
 
 def menu():
