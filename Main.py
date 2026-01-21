@@ -46,7 +46,7 @@ def bedrijf_aanpassen():
         print("Ongeldig ID.")
         return
 
-    bedrijf = db.get_company_by_id(bedrijf_id)
+    bedrijf = db.get_company(bedrijf_id)
 
     if not bedrijf:
         print("Bedrijf niet gevonden.")
@@ -82,7 +82,7 @@ def bedrijf_verwijderen():
         print("Ongeldig ID.")
         return
 
-    bedrijf = db.get_company_by_id(bedrijf_id)
+    bedrijf = db.get_company(bedrijf_id)
 
     if not bedrijf:
         print("Bedrijf niet gevonden.")
@@ -100,8 +100,11 @@ def bedrijf_verwijderen():
         print("Verwijderen geannuleerd.")
         return
 
-    db.delete_company(bedrijf_id)
-    print("Bedrijf succesvol verwijderd.")
+    if db.delete_company(bedrijf_id) != 0:
+        print("Bedrijf succesvol verwijderd.")
+        return
+
+    print("Bedrijf is niet verwijderd!")
 
 
 
@@ -111,15 +114,15 @@ def contact_aanmaken():
     print("\nNIEUW CONTACT AANMAKEN")
     print("-" * 40)
 
-    first = input("Voornaam: ").strip()
-    last = input("Achternaam: ").strip()
+    first = input("Naam: ").strip()
+
     email = input("Email: ").strip()
     phone = input("Telefoon (optioneel): ").strip()
     company_id = input("Bedrijf ID: ").strip()
 
     # Validatie verplichte velden
-    if not first or not last or not email or not company_id:
-        print("Voornaam, achternaam, email en bedrijf ID zijn verplicht.")
+    if not first  or not email or not company_id:
+        print("Voornaam, email en bedrijf ID zijn verplicht.")
         return
 
     # Bedrijf ID moet een getal zijn
@@ -130,7 +133,7 @@ def contact_aanmaken():
         return
 
     # Contact opslaan
-    db.create_contact(first, last, email, phone, company_id)
+    db.create_contact(company_id, first, email, phone)
 
     print("Contact succesvol aangemaakt.")
 
@@ -153,7 +156,7 @@ def contact_tonen():
     print("-" * 100)
 
     for c in rows:
-        naam = f"{c['first_name']} {c['last_name']}"
+        naam = f"{c['name']}"
         email = c['email'] or "-"
         phone = c['phone'] or "-"
         company = c['company_id'] or "-"
@@ -173,45 +176,32 @@ def contact_aanpassen():
         print("Ongeldig ID.")
         return
 
-    contact = db.get_contact_by_id(contact_id)
+    contact = db.get_contact(contact_id)
 
     if not contact:
         print("Contact niet gevonden.")
         return
 
     print("\nHuidige gegevens:")
-    print(f"Voornaam: {contact['first_name']}")
-    print(f"Achternaam: {contact['last_name']}")
+    print(f"Naam: {contact['name']}")
     print(f"Email: {contact['email']}")
     print(f"Telefoon: {contact['phone']}")
-    print(f"Bedrijf ID: {contact['company_id']}")
 
     print("\nLaat leeg om de huidige waarde te behouden.\n")
 
     # Nieuwe waarden vragen
-    new_first = input("Nieuwe voornaam: ").strip()
-    new_last = input("Nieuwe achternaam: ").strip()
+    new_first = input("Nieuwe naam: ").strip()
     new_email = input("Nieuwe email: ").strip()
     new_phone = input("Nieuwe telefoon: ").strip()
-    new_company = input("Nieuw bedrijf ID: ").strip()
 
     # Lege velden behouden de oude waarde
-    first = new_first if new_first else contact["first_name"]
-    last = new_last if new_last else contact["last_name"]
+    first = new_first if new_first else contact["name"]
     email = new_email if new_email else contact["email"]
     phone = new_phone if new_phone else contact["phone"]
 
-    if new_company:
-        try:
-            company_id = int(new_company)
-        except ValueError:
-            print("Ongeldig bedrijf ID.")
-            return
-    else:
-        company_id = contact["company_id"]
 
     # Update uitvoeren
-    db.update_contact(contact_id, first, last, email, phone, company_id)
+    db.update_contact(contact_id, first, email, phone)
 
     print("Contact succesvol aangepast.")
 
@@ -226,14 +216,14 @@ def contact_verwijderen():
         return
 
     # Ophalen van het contact om te tonen wat je gaat verwijderen
-    contact = db.get_contact_by_id(contact_id)
+    contact = db.get_contact(contact_id)
 
     if not contact:
         print("Contact niet gevonden.")
         return
 
     # Contact tonen ter bevestiging
-    naam = f"{contact['first_name']} {contact['last_name']}"
+    naam = f"{contact['name']}"
     email = contact['email']
     print(f"\nJe staat op het punt om dit contact te verwijderen:")
     print(f"ID: {contact_id}")
@@ -254,7 +244,7 @@ def contact_verwijderen():
 
 
 def toon_bedrijven_met_contacten():
-    rows = db.list_companies_with_contacts()
+    rows = db.list_companies_with_contacts_list()
 
     if not rows:
         print("Geen bedrijven gevonden.")
@@ -264,12 +254,12 @@ def toon_bedrijven_met_contacten():
     print("=" * 80)
 
     for bedrijf in rows:
-        print(f"\nBedrijf: {bedrijf['name']} (ID {bedrijf['id']})")
-        print(f"BTW: {bedrijf['vat_number'] or '-'}")
-        print(f"Aangemaakt: {bedrijf['created_at']}")
+        print(f"\nBedrijf: {bedrijf[1]} (ID {bedrijf[0]})")
+        print(f"BTW: {bedrijf[2] or '-'}")
+        print(f"Aangemaakt: {bedrijf[3]}")
         print("-" * 80)
 
-        contacten = bedrijf.get("contacts", [])
+        contacten = bedrijf[4]
 
         if not contacten:
             print("  Geen contacten voor dit bedrijf.")
@@ -281,8 +271,10 @@ def toon_bedrijven_met_contacten():
 
         # Rows
         for c in contacten:
-            naam = f"{c['first_name']} {c['last_name']}"
-            print(f"  {c['id']:>4}  {naam:<25}  {c['email']:<30}")
+            naam = f"{c[1]}"
+            contactid = f"{c[0]}"
+            email = f"{c[2]}"
+            print(f"  {contactid:>4}  {naam:<25}  {email:<30}")
 
     print("\n" + "=" * 80)
 
